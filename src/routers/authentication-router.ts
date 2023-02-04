@@ -4,6 +4,6 @@ import { schemaValidator } from "../middlewares/schemaValidator";
 
 const authRouter = Router();
 
-authRouter.post("/signin", schemaValidator(signInSchema), )
+authRouter.post("/", schemaValidator(signInSchema), )
 
 export { authRouter };

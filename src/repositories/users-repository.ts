@@ -1,5 +1,6 @@
 import { prisma } from "@/config";
 import { Prisma, User } from "@prisma/client";
+import { CreateUserParams } from "@/services";
 
 async function findByEmail(email: string):Promise<User | null> {
     return await prisma.user.findUnique({
@@ -9,8 +10,8 @@ async function findByEmail(email: string):Promise<User | null> {
     });
 }
 
-async function create(name: string, email: string, password: string) {
-    await prisma.user.create({
+async function create({name, email, password} : CreateUserParams) {
+    return await prisma.user.create({
         data: {
             name,
             email,
