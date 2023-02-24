@@ -1,5 +1,19 @@
-//import * as nodeRestClient from "node-rest-client";
 import { Request, Response } from "express";
+import { File } from "@prisma/client";
+import * as ttsRepository from "../repositories/tts-repository";
+import { failToGenerateAudioError } from "./errors";
+
+async function newAudioFile(userId: number, text: string, audioName: string) {
+    
+    const audioData : any | Promise<CreateFileParams> = await postTTS(text, audioName);
+    if(!audioData) throw failToGenerateAudioError();
+    
+    const data = {...audioData, userId};
+
+    return ttsRepository.default.createNewFileRegister(data);
+}
+
+export type CreateFileParams = Pick<File, "userId" | "name" | "voice" | "path" | "size">;
 
 async function postTTS(text: string, audioName: string) {
     
@@ -15,8 +29,10 @@ async function postTTS(text: string, audioName: string) {
 
     let bearer_token = 'Bearer ';
 
+    let voice = "AntonioNeural"; //depois vai ser enviado nos paramentros
+    
     let ssml = `<speak version='1.0' xmlns=\"http://www.w3.org/2001/10/synthesis\" xml:lang='pt-BR'>
-                <voice  name='Microsoft Server Speech Text to Speech Voice (pt-BR, AntonioNeural)'>${text}</voice> </speak>`;
+                <voice  name='Microsoft Server Speech Text to Speech Voice (pt-BR, ${voice})'>${text}</voice> </speak>`;
 
     client.post("https://brazilsouth.api.cognitive.microsoft.com/sts/v1.0/issuetoken", 
         auth_request_args, 
@@ -35,14 +51,26 @@ async function postTTS(text: string, audioName: string) {
         client.post("https://brazilsouth.tts.speech.microsoft.com/cognitiveservices/v1",
                     audio_request_args,
                     function (audio_data: Request, audio_response: Response) {
-                fs.writeFileSync(`${audioName}.mpga`, audio_data);
+                    const path = `../downloads/${audioName}.mpga`
+                fs.writeFileSync(path, audio_data);
+                
+                const ttsData = {
+                    name: audioName,
+                    path,
+                    size: audio_response.download.length,
+                    voice
+                };
+
+                return ttsData;
         });
 
     });
 
 }
 
+
 const ttsService = {
+    newAudioFile,
     postTTS
 };
 

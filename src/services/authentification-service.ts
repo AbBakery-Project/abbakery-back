@@ -1,4 +1,5 @@
 import userRepository from "@/repositories/users-repository";
+import * as sessionRepository from "@/repositories/session-repository";
 import { invalidCredentialsError } from "@/errors/errors";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -9,7 +10,11 @@ export async function userAuthentification(email: string, password: string) {
     await validatePassword(password, user.password);
 
     const userId = user.id;
-    const token = jwt.sign( {userId}, process.env.JWT_SECRET);
+    const token = jwt.sign( {userId}, process.env.JWT_SECRET, {expiresIn: '1h'});
+    await sessionRepository.default.create({
+        token,
+        userId
+    });
 
     return token;
 }
