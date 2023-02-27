@@ -1,21 +1,8 @@
 import { Request, Response } from "express";
-import { File } from "@prisma/client";
 import * as ttsRepository from "../repositories/tts-repository";
 import { failToGenerateAudioError } from "./errors";
 
-async function newAudioFile(userId: number, text: string, audioName: string) {
-    
-    const audioData : any | Promise<CreateFileParams> = await postTTS(text, audioName);
-    if(!audioData) throw failToGenerateAudioError();
-    
-    const data = {...audioData, userId};
-
-    return ttsRepository.default.createNewFileRegister(data);
-}
-
-export type CreateFileParams = Pick<File, "userId" | "name" | "voice" | "path" | "size">;
-
-async function postTTS(text: string, audioName: string) {
+async function postTTS(userId: number, text: string, audioName: string) {
     
     const fs = require('fs');
     let Client = require('node-rest-client').Client;
@@ -57,20 +44,21 @@ async function postTTS(text: string, audioName: string) {
                 const ttsData = {
                     name: audioName,
                     path,
-                    size: audio_response.download.length,
                     voice
                 };
 
-                return ttsData;
+                if(!ttsData) throw failToGenerateAudioError();
+                
+                const data = {...ttsData, userId};
+                return ttsRepository.default.createNewFileRegister(data);
         });
-
     });
 
+    return { message: "New audio created sucessfully!" };
 }
 
 
 const ttsService = {
-    newAudioFile,
     postTTS
 };
 

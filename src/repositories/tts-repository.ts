@@ -1,11 +1,13 @@
 import { prisma } from "@/config";
-import { CreateFileParams } from "@/services/tts-service";
+import { File } from "@prisma/client";
 
 async function createNewFileRegister(data:CreateFileParams) {
-    return await prisma.file.create({
+    return prisma.file.create({
         data
     })
 }
+
+export type CreateFileParams = Pick<File, "userId" | "name" | "voice" | "path" >;
 
 const ttsRepository = {
     createNewFileRegister
